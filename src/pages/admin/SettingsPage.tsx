@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Save, Plus, Trash2, Settings, Image as ImageIcon, Briefcase } from "lucide-react";
+import { Save, Plus, Trash2, Image as ImageIcon, Briefcase } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card";

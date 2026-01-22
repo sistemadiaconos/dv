@@ -35,7 +35,7 @@ export default function ConfirmationPage() {
     const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
     // Editing State
-    const [isEditingDept, setIsEditingDept] = useState(false);
+    // isEditingDept removed
     const [selectedDepts, setSelectedDepts] = useState<string[]>([]);
 
     // Confirmation State
@@ -132,7 +132,7 @@ export default function ConfirmationPage() {
         setStatus(null);
         setJustificativa("");
         setErrorFull("");
-        setIsEditingDept(false);
+        // setIsEditingDept(false);
         setSelectedDepts([]);
         setValidationError(false);
     };

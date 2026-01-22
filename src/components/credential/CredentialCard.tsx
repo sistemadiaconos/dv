@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui
 import { Badge } from "../ui/badge";
 
 import html2canvas from "html2canvas";
-import { Download, Share2 } from "lucide-react";
+import { Share2 } from "lucide-react";
 import { Button } from "../ui/button";
 import { useState } from "react";
 

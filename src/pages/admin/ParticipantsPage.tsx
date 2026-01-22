@@ -13,7 +13,7 @@ export default function ParticipantsPage() {
     const [participants, setParticipants] = useState<Participante[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
-    const [isEditing, setIsEditing] = useState(false);
+    // isEditing removed
     const [currentParticipant, setCurrentParticipant] = useState<Partial<Participante>>({});
     const [roles, setRoles] = useState<string[]>([]);
 
@@ -174,7 +174,7 @@ export default function ParticipantsPage() {
                     <Button variant="outline" onClick={() => setShowImport(true)}>
                         <Upload className="mr-2 h-4 w-4" /> Importar
                     </Button>
-                    <Button onClick={() => { setCurrentParticipant({}); setIsEditing(false); setShowForm(true); }}>
+                    <Button onClick={() => { setCurrentParticipant({}); setShowForm(true); }}>
                         <Plus className="mr-2 h-4 w-4" /> Novo Participante
                     </Button>
                 </div>

@@ -102,7 +102,7 @@ export default function AdminScannerPage() {
     };
 
     function playSound(type: 'success' | 'error') {
-        const audio = new Audio(type === 'success' ? '/sounds/success.mp3' : '/sounds/error.mp3');
+        new Audio(type === 'success' ? '/sounds/success.mp3' : '/sounds/error.mp3');
         // We probably don't have sounds, so we can just skip or use browser beep if possible (not possible in web easily)
         // Ignoring actual audio for now, as we don't have assets.
     }

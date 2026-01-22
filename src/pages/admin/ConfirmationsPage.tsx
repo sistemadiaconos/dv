@@ -41,7 +41,7 @@ export default function ConfirmationsPage() {
     }, [selectedMeetingId]);
 
     async function loadConfirmations(meetingId: string) {
-        setLoading(true);
+        // setLoading(true);
         const { data } = await supabase
             .from('confirmacoes')
             .select(`
