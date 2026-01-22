@@ -1,0 +1,28 @@
+
+// Helper functions for normalization matching DB constraints
+function normalizeEncargo(value: string): "Pastor" | "Diretoria" | "Diacono" | "Voluntário" | "Outro" {
+    if (!value) return "Outro";
+    const lower = value.toLowerCase().trim();
+
+    // Direct matches (case insensitive logic)
+    if (lower.includes("pastor")) return "Pastor";
+    if (lower.includes("diretoria") || lower.includes("lider") || lower.includes("líder")) return "Diretoria";
+    // "Diácono" (accented) -> DB "Diacono" (unaccented)
+    if (lower.includes("diacono") || lower.includes("diácono")) return "Diacono";
+    // "Voluntario" (unaccented) -> DB "Voluntário" (accented)
+    if (lower.includes("voluntario") || lower.includes("voluntário")) return "Voluntário";
+    
+    return "Outro";
+}
+
+function normalizeDepartamento(value: string): "MVPMusic" | "Diacono(niza)" | "Louvor" | "Administrativo" | "Outro" {
+    if (!value) return "Outro";
+    const lower = value.toLowerCase().trim();
+
+    if (lower.includes("mvp") || lower.includes("music")) return "MVPMusic";
+    if (lower.includes("diacono") || lower.includes("diácono") || lower.includes("diaconia")) return "Diacono(niza)";
+    if (lower.includes("louvor") || lower.includes("som") || lower.includes("mídia")) return "Louvor";
+    if (lower.includes("admin") || lower.includes("secretaria")) return "Administrativo";
+
+    return "Outro";
+}
