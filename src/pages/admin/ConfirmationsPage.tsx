@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { Download, Filter, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
+import { Download, CheckCircle, XCircle } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { supabase } from "../../lib/supabase";
-import { meetingService } from "../../services/meetingService";
+// meetingService removed
 import type { Reuniao } from "../../services/meetingService";
 import type { Participante } from "../../services/participantService";
 import { cn } from "../../lib/utils";
@@ -20,7 +20,7 @@ export default function ConfirmationsPage() {
     const [meetings, setMeetings] = useState<Reuniao[]>([]);
     const [selectedMeetingId, setSelectedMeetingId] = useState<string>("");
     const [confirmations, setConfirmations] = useState<ConfirmationDetail[]>([]);
-    const [loading, setLoading] = useState(false);
+    // loading removed
     const [filter, setFilter] = useState<'Todos' | 'Confirmado' | 'Ausente'>('Todos');
 
     useEffect(() => {
@@ -42,7 +42,7 @@ export default function ConfirmationsPage() {
 
     async function loadConfirmations(meetingId: string) {
         setLoading(true);
-        const { data, error } = await supabase
+        const { data } = await supabase
             .from('confirmacoes')
             .select(`
             *,
@@ -51,7 +51,7 @@ export default function ConfirmationsPage() {
             .eq('id_reuniao', meetingId);
 
         if (data) setConfirmations(data as any);
-        setLoading(false);
+        // setLoading(false);
     }
 
     const filtered = confirmations.filter(c => filter === 'Todos' || c.presenca === filter);

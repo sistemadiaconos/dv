@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, Calendar, Edit2, Trash2, Power, CheckCircle, Clock } from "lucide-react";
+import { Plus, Calendar, Edit2, Trash2, Power, Clock } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";

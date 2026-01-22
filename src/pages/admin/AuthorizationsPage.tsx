@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, Trash2, ShieldCheck, Search, Phone, FileUp, X, Edit2, Save } from "lucide-react";
+import { Plus, Trash2, ShieldCheck, Search, Phone, FileUp, X, Edit2 } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card";
@@ -59,6 +59,19 @@ export default function AuthorizationsPage() {
     function cancelEdit() {
         setEditingId(null);
         setNewPhone("");
+    }
+
+    async function handleDelete(id: string) {
+        if (!confirm("Tem certeza que deseja remover esta autorização?")) return;
+
+        setLoading(true);
+        try {
+            await authorizationService.deletePhone(id);
+            loadPhones();
+        } catch (error: any) {
+            alert("Erro ao remover: " + error.message);
+        }
+        setLoading(false);
     }
 
     async function handleBulkImport() {

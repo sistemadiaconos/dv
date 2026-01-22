@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { Scanner } from '@yudiel/react-qr-scanner';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card";
+import { Card, CardContent } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { meetingService, type Reuniao } from "../../services/meetingService";
-import { participantService } from "../../services/participantService";
+// participantService excluded
 import { CheckCircle2, AlertCircle, ArrowLeft, RefreshCw, XCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
@@ -147,7 +147,7 @@ export default function AdminScannerPage() {
                 <Scanner
                     onScan={handleScan}
                     styles={{ container: { height: '100%' } }}
-                    components={{ audio: false, finder: true }}
+                    components={{ finder: true }}
                     allowMultiple={true}
                     scanDelay={2000}
                 />
