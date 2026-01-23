@@ -196,6 +196,14 @@ export default function DashboardPage() {
                                                 <Clock className="h-3 w-3" />
                                                 {new Date(c.checkin_em).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </div>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                                                onClick={() => handleDeleteConfirmation(c.id, c.participantes?.nome)}
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
                                         </div>
                                     </div>
                                 ))}
