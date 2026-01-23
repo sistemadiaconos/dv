@@ -172,59 +172,19 @@ export default function DashboardPage() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+                {/* Column 1: Check-ins (Most Important) */}
                 <Card className="col-span-4 glass-card border-none">
                     <CardHeader>
                         <CardTitle className="text-xl font-bold flex items-center gap-2">
-                            <AlertTriangle className="h-5 w-5 text-red-500" /> Ausências Recentes
+                            <QrCode className="h-5 w-5 text-indigo-500" /> Últimos Check-ins
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-1">
                             {stats.confirmations
-                                .filter((c: any) => c.presenca === 'Ausente')
-                                .slice(0, 5)
-                                .map((c: any) => (
-                                    <div key={c.id} className="flex items-center justify-between border-b border-border/50 py-4 last:border-0 hover:bg-muted/50 px-4 rounded-xl transition-colors">
-                                        <div className="space-y-1">
-                                            <p className="text-sm font-bold text-foreground">{c.participantes?.nome || "Participante Desconhecido"}</p>
-                                            <p className="text-xs text-muted-foreground italic leading-relaxed">"{c.justificativa}"</p>
-                                        </div>
-                                        <div className="flex items-center gap-3">
-                                            <div className="text-xs font-bold text-muted-foreground bg-secondary px-2 py-1 rounded-md">
-                                                {new Date(c.data_confirmacao).toLocaleDateString()}
-                                            </div>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
-                                                onClick={() => handleDeleteConfirmation(c.id, c.participantes?.nome)}
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    </div>
-                                ))}
-                            {stats.absent === 0 && (
-                                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                                    <CheckCircle className="h-10 w-10 mb-2 opacity-20" />
-                                    <p className="text-sm font-medium">Nenhuma ausência registrada.</p>
-                                </div>
-                            )}
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card className="col-span-3 glass-card border-none">
-                    <CardHeader>
-                        <CardTitle className="text-xl font-bold flex items-center gap-2">
-                            <CheckCircle className="h-5 w-5 text-green-500" /> Presenças Recentes
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-1">
-                            {stats.confirmations
-                                .filter((c: any) => c.presenca === 'Confirmado')
-                                .slice(0, 5)
+                                .filter((c: any) => c.checkin_em)
+                                .sort((a: any, b: any) => new Date(b.checkin_em).getTime() - new Date(a.checkin_em).getTime())
+                                .slice(0, 10)
                                 .map((c: any) => (
                                     <div key={c.id} className="flex items-center justify-between border-b border-border/50 py-4 last:border-0 hover:bg-muted/50 px-4 rounded-xl transition-colors">
                                         <div className="space-y-1">
@@ -232,29 +192,87 @@ export default function DashboardPage() {
                                             <p className="text-xs font-bold text-indigo-500 uppercase tracking-widest">{c.participantes?.departamento || "Sem Departamento"}</p>
                                         </div>
                                         <div className="flex items-center gap-3">
-                                            <div className="text-xs font-bold text-muted-foreground bg-secondary px-2 py-1 rounded-md">
-                                                {new Date(c.data_confirmacao).toLocaleDateString()}
+                                            <div className="text-xs font-bold text-white bg-green-500/80 px-2 py-1 rounded-md flex items-center gap-1">
+                                                <Clock className="h-3 w-3" />
+                                                {new Date(c.checkin_em).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </div>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
-                                                onClick={() => handleDeleteConfirmation(c.id, c.participantes?.nome)}
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
                                         </div>
                                     </div>
                                 ))}
-                            {stats.confirmations.filter((c: any) => c.presenca === 'Confirmado').length === 0 && (
+                            {stats.confirmations.filter((c: any) => c.checkin_em).length === 0 && (
                                 <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                                    <Clock className="h-10 w-10 mb-2 opacity-20" />
-                                    <p className="text-sm font-medium">Nenhuma presença confirmada ainda.</p>
+                                    <QrCode className="h-10 w-10 mb-2 opacity-20" />
+                                    <p className="text-sm font-medium">Nenhum check-in realizado ainda.</p>
                                 </div>
                             )}
                         </div>
                     </CardContent>
                 </Card>
+
+                {/* Column 2: Other Lists (Tabs or Stacked) */}
+                <div className="col-span-3 space-y-4">
+                    {/* Absences */}
+                    <Card className="glass-card border-none">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-lg font-bold flex items-center gap-2">
+                                <AlertTriangle className="h-4 w-4 text-red-500" /> Ausências Recentes
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-1">
+                                {stats.confirmations
+                                    .filter((c: any) => c.presenca === 'Ausente')
+                                    .slice(0, 3)
+                                    .map((c: any) => (
+                                        <div key={c.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0 hover:bg-muted/50 px-2 rounded-lg">
+                                            <div className="overflow-hidden">
+                                                <p className="text-sm font-medium truncate">{c.participantes?.nome}</p>
+                                                <p className="text-xs text-muted-foreground truncate">"{c.justificativa}"</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                {stats.confirmations.filter((c: any) => c.presenca === 'Ausente').length === 0 && (
+                                    <p className="text-xs text-muted-foreground py-4 text-center">Nenhuma ausência.</p>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Confirmed (Site) */}
+                    <Card className="glass-card border-none">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-lg font-bold flex items-center gap-2">
+                                <CheckCircle className="h-4 w-4 text-green-500" /> Confirmados Recentemente
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-1">
+                                {stats.confirmations
+                                    .filter((c: any) => c.presenca === 'Confirmado' && !c.checkin_em)
+                                    .slice(0, 3)
+                                    .map((c: any) => (
+                                        <div key={c.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0 hover:bg-muted/50 px-2 rounded-lg">
+                                            <div className="overflow-hidden">
+                                                <p className="text-sm font-medium truncate">{c.participantes?.nome}</p>
+                                                <p className="text-xs text-muted-foreground">{new Date(c.data_confirmacao).toLocaleDateString()}</p>
+                                            </div>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-6 w-6 text-muted-foreground hover:text-red-500"
+                                                onClick={() => handleDeleteConfirmation(c.id, c.participantes?.nome)}
+                                            >
+                                                <Trash2 className="h-3 w-3" />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                {stats.confirmations.filter((c: any) => c.presenca === 'Confirmado' && !c.checkin_em).length === 0 && (
+                                    <p className="text-xs text-muted-foreground py-4 text-center">Nenhum pendente de check-in.</p>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
         </div>
     );

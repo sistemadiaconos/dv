@@ -18,6 +18,16 @@ export default function AdminScannerPage() {
         loadActiveMeeting();
     }, []);
 
+    // Auto-dismiss confirmation after 2.5 seconds
+    useEffect(() => {
+        if (lastScan && (lastScan.status === 'success' || lastScan.status === 'error')) {
+            const timer = setTimeout(() => {
+                setLastScan(null);
+            }, 2500);
+            return () => clearTimeout(timer);
+        }
+    }, [lastScan]);
+
     async function loadActiveMeeting() {
         const active = await meetingService.getActiveMeeting();
         setMeeting(active);
@@ -167,10 +177,21 @@ export default function AdminScannerPage() {
                                     </h3>
                                     <p className="text-lg font-medium opacity-90 mt-1">{lastScan.name}</p>
                                 </div>
+
+                                {(lastScan.status === 'success' || lastScan.status === 'error') && (
+                                    <Button
+                                        variant="secondary"
+                                        className="mt-4 bg-white/20 hover:bg-white/30 text-white border-0 w-full"
+                                        onClick={() => setLastScan(null)}
+                                    >
+                                        Fechar Agora
+                                    </Button>
+                                )}
                             </CardContent>
                         </Card>
                     </div>
                 )}
+
             </div>
 
             {/* Footer Instructions */}
