@@ -59,26 +59,56 @@ export const meetingService = {
     },
 
     async getMeetingStats(meetingId: string) {
-        const { data: confirmations, error } = await supabase
-            .from('confirmacoes')
-            .select('*, participantes (nome, departamento)')
-            .eq('id_reuniao', meetingId);
+        const [
+            { count: total },
+            { count: confirmed },
+            { count: absent },
+            { count: pending },
+            { count: checkins },
+            { data: recentCheckins },
+            { data: recentAbsences },
+            { data: recentConfirmations }
+        ] = await Promise.all([
+            // Counts (Lightweight)
+            supabase.from('confirmacoes').select('*', { count: 'exact', head: true }).eq('id_reuniao', meetingId),
+            supabase.from('confirmacoes').select('*', { count: 'exact', head: true }).eq('id_reuniao', meetingId).eq('presenca', 'Confirmado'),
+            supabase.from('confirmacoes').select('*', { count: 'exact', head: true }).eq('id_reuniao', meetingId).eq('presenca', 'Ausente'),
+            supabase.from('confirmacoes').select('*', { count: 'exact', head: true }).eq('id_reuniao', meetingId).eq('presenca', 'Pendente'),
+            supabase.from('confirmacoes').select('*', { count: 'exact', head: true }).eq('id_reuniao', meetingId).not('checkin_em', 'is', null),
 
-        if (error) return null;
+            // Lists (Limited)
+            supabase.from('confirmacoes')
+                .select('*, participantes (nome, departamento)')
+                .eq('id_reuniao', meetingId)
+                .not('checkin_em', 'is', null)
+                .order('checkin_em', { ascending: false })
+                .limit(10),
 
-        const total = confirmations.length;
-        const confirmed = confirmations.filter(c => c.presenca === 'Confirmado').length;
-        const absent = confirmations.filter(c => c.presenca === 'Ausente').length;
-        const pending = confirmations.filter(c => c.presenca === 'Pendente').length;
-        const checkins = confirmations.filter(c => (c as any).checkin_em).length; // Cast as any because checkin_em might not be in generated types yet
+            supabase.from('confirmacoes')
+                .select('*, participantes (nome, departamento)')
+                .eq('id_reuniao', meetingId)
+                .eq('presenca', 'Ausente')
+                .limit(5),
+
+            supabase.from('confirmacoes')
+                .select('*, participantes (nome, departamento)')
+                .eq('id_reuniao', meetingId)
+                .eq('presenca', 'Confirmado')
+                .is('checkin_em', null)
+                .order('data_confirmacao', { ascending: false })
+                .limit(5)
+        ]);
 
         return {
-            total,
-            confirmed,
-            absent,
-            pending,
-            checkins,
-            confirmations // Return raw data for detailed lists if needed
+            total: total || 0,
+            confirmed: confirmed || 0,
+            absent: absent || 0,
+            pending: pending || 0,
+            checkins: checkins || 0,
+            recentCheckins: recentCheckins || [],
+            recentAbsences: recentAbsences || [],
+            recentConfirmations: recentConfirmations || [],
+            confirmations: [] // Deprecated: Returning empty to signal optimized mode
         };
     },
 

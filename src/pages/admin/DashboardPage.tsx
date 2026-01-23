@@ -9,7 +9,17 @@ import { formatDateWithWeekday } from "../../lib/utils";
 
 export default function DashboardPage() {
     const [meeting, setMeeting] = useState<Reuniao | null>(null);
-    const [stats, setStats] = useState({ total: 0, confirmed: 0, absent: 0, pending: 0, checkins: 0, confirmations: [] as any[] });
+    const [stats, setStats] = useState({
+        total: 0,
+        confirmed: 0,
+        absent: 0,
+        pending: 0,
+        checkins: 0,
+        confirmations: [] as any[],
+        recentCheckins: [] as any[],
+        recentAbsences: [] as any[],
+        recentConfirmations: [] as any[]
+    });
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -24,6 +34,7 @@ export default function DashboardPage() {
         if (activeMeeting) {
             const meetingStats = await meetingService.getMeetingStats(activeMeeting.id);
             if (meetingStats) {
+                // @ts-ignore
                 setStats(meetingStats);
             }
         }
@@ -38,9 +49,10 @@ export default function DashboardPage() {
             // Refresh local state without full reload
             setStats(prev => ({
                 ...prev,
-                confirmations: prev.confirmations.filter(c => c.id !== id),
-                // Simple decrement of stats for immediate feedback
-                // Ideally reload data, but this is faster
+                // Update all lists where this ID might exist
+                recentCheckins: prev.recentCheckins.filter(c => c.id !== id),
+                recentAbsences: prev.recentAbsences.filter(c => c.id !== id),
+                recentConfirmations: prev.recentConfirmations.filter(c => c.id !== id),
             }));
             loadData(); // Reload to be safe and accurate
         } catch (error) {
@@ -190,33 +202,29 @@ export default function DashboardPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-1">
-                            {stats.confirmations
-                                .filter((c: any) => c.checkin_em)
-                                .sort((a: any, b: any) => new Date(b.checkin_em).getTime() - new Date(a.checkin_em).getTime())
-                                .slice(0, 10)
-                                .map((c: any) => (
-                                    <div key={c.id} className="flex items-center justify-between border-b border-border/50 py-4 last:border-0 hover:bg-muted/50 px-4 rounded-xl transition-colors">
-                                        <div className="space-y-1">
-                                            <p className="text-sm font-bold text-foreground">{c.participantes?.nome || "Participante Desconhecido"}</p>
-                                            <p className="text-xs font-bold text-indigo-500 uppercase tracking-widest">{c.participantes?.departamento || "Sem Departamento"}</p>
-                                        </div>
-                                        <div className="flex items-center gap-3">
-                                            <div className="text-xs font-bold text-white bg-green-500/80 px-2 py-1 rounded-md flex items-center gap-1">
-                                                <Clock className="h-3 w-3" />
-                                                {new Date(c.checkin_em).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                            </div>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
-                                                onClick={() => handleDeleteConfirmation(c.id, c.participantes?.nome)}
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </div>
+                            {stats.recentCheckins.map((c: any) => (
+                                <div key={c.id} className="flex items-center justify-between border-b border-border/50 py-4 last:border-0 hover:bg-muted/50 px-4 rounded-xl transition-colors">
+                                    <div className="space-y-1">
+                                        <p className="text-sm font-bold text-foreground">{c.participantes?.nome || "Participante Desconhecido"}</p>
+                                        <p className="text-xs font-bold text-indigo-500 uppercase tracking-widest">{c.participantes?.departamento || "Sem Departamento"}</p>
                                     </div>
-                                ))}
-                            {stats.confirmations.filter((c: any) => c.checkin_em).length === 0 && (
+                                    <div className="flex items-center gap-3">
+                                        <div className="text-xs font-bold text-white bg-green-500/80 px-2 py-1 rounded-md flex items-center gap-1">
+                                            <Clock className="h-3 w-3" />
+                                            {new Date(c.checkin_em).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </div>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                                            onClick={() => handleDeleteConfirmation(c.id, c.participantes?.nome)}
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            ))}
+                            {stats.recentCheckins.length === 0 && (
                                 <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                                     <QrCode className="h-10 w-10 mb-2 opacity-20" />
                                     <p className="text-sm font-medium">Nenhum check-in realizado ainda.</p>
@@ -237,18 +245,15 @@ export default function DashboardPage() {
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-1">
-                                {stats.confirmations
-                                    .filter((c: any) => c.presenca === 'Ausente')
-                                    .slice(0, 3)
-                                    .map((c: any) => (
-                                        <div key={c.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0 hover:bg-muted/50 px-2 rounded-lg">
-                                            <div className="overflow-hidden">
-                                                <p className="text-sm font-medium truncate">{c.participantes?.nome}</p>
-                                                <p className="text-xs text-muted-foreground truncate">"{c.justificativa}"</p>
-                                            </div>
+                                {stats.recentAbsences.map((c: any) => (
+                                    <div key={c.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0 hover:bg-muted/50 px-2 rounded-lg">
+                                        <div className="overflow-hidden">
+                                            <p className="text-sm font-medium truncate">{c.participantes?.nome}</p>
+                                            <p className="text-xs text-muted-foreground truncate">"{c.justificativa}"</p>
                                         </div>
-                                    ))}
-                                {stats.confirmations.filter((c: any) => c.presenca === 'Ausente').length === 0 && (
+                                    </div>
+                                ))}
+                                {stats.recentAbsences.length === 0 && (
                                     <p className="text-xs text-muted-foreground py-4 text-center">Nenhuma ausência.</p>
                                 )}
                             </div>
@@ -264,26 +269,23 @@ export default function DashboardPage() {
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-1">
-                                {stats.confirmations
-                                    .filter((c: any) => c.presenca === 'Confirmado' && !c.checkin_em)
-                                    .slice(0, 3)
-                                    .map((c: any) => (
-                                        <div key={c.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0 hover:bg-muted/50 px-2 rounded-lg">
-                                            <div className="overflow-hidden">
-                                                <p className="text-sm font-medium truncate">{c.participantes?.nome}</p>
-                                                <p className="text-xs text-muted-foreground">{new Date(c.data_confirmacao).toLocaleDateString()}</p>
-                                            </div>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-6 w-6 text-muted-foreground hover:text-red-500"
-                                                onClick={() => handleDeleteConfirmation(c.id, c.participantes?.nome)}
-                                            >
-                                                <Trash2 className="h-3 w-3" />
-                                            </Button>
+                                {stats.recentConfirmations.map((c: any) => (
+                                    <div key={c.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0 hover:bg-muted/50 px-2 rounded-lg">
+                                        <div className="overflow-hidden">
+                                            <p className="text-sm font-medium truncate">{c.participantes?.nome}</p>
+                                            <p className="text-xs text-muted-foreground">{new Date(c.data_confirmacao).toLocaleDateString()}</p>
                                         </div>
-                                    ))}
-                                {stats.confirmations.filter((c: any) => c.presenca === 'Confirmado' && !c.checkin_em).length === 0 && (
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 text-muted-foreground hover:text-red-500"
+                                            onClick={() => handleDeleteConfirmation(c.id, c.participantes?.nome)}
+                                        >
+                                            <Trash2 className="h-3 w-3" />
+                                        </Button>
+                                    </div>
+                                ))}
+                                {stats.recentConfirmations.length === 0 && (
                                     <p className="text-xs text-muted-foreground py-4 text-center">Nenhum pendente de check-in.</p>
                                 )}
                             </div>
