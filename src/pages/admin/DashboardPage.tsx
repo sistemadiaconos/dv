@@ -64,8 +64,8 @@ export default function DashboardPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h2>
                 <div className="flex items-center gap-2">
                     <span className="px-3 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full text-sm font-medium flex items-center gap-1">
                         <div className="w-2 h-2 rounded-full bg-green-600 animate-pulse"></div> Reunião Ativa
@@ -77,16 +77,16 @@ export default function DashboardPage() {
                 {/* Decorative glow */}
                 <div className="absolute -right-20 -top-20 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl group-hover:bg-indigo-500/20 transition-colors pointer-events-none" />
 
-                <CardContent className="p-8 relative z-10">
-                    <div className="flex flex-col md:flex-row items-start justify-between gap-6">
+                <CardContent className="p-6 sm:p-8 relative z-10">
+                    <div className="flex flex-col md:flex-row items-start justify-between gap-8">
                         <div className="space-y-4 w-full">
                             <div>
                                 <p className="text-indigo-300 text-xs font-black uppercase tracking-widest mb-1">Próxima Reunião</p>
-                                <h3 className="text-3xl md:text-4xl font-black tracking-tight">{meeting.titulo}</h3>
+                                <h3 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight leading-tight">{meeting.titulo}</h3>
                             </div>
-                            <div className="flex flex-wrap gap-6 mt-6">
+                            <div className="flex flex-wrap gap-4 sm:gap-6 mt-6">
                                 <div className="flex items-center gap-3 text-slate-200">
-                                    <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/20">
+                                    <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/20 shrink-0">
                                         <Calendar className="h-5 w-5" />
                                     </div>
                                     <div>
@@ -95,7 +95,7 @@ export default function DashboardPage() {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3 text-slate-200">
-                                    <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/20">
+                                    <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/20 shrink-0">
                                         <Clock className="h-5 w-5" />
                                     </div>
                                     <div>
@@ -105,12 +105,12 @@ export default function DashboardPage() {
                                 </div>
                             </div>
                         </div>
-                        <div className="flex gap-3 w-full md:w-auto">
-                            <Button variant="secondary" className="bg-white text-indigo-950 hover:bg-slate-100 font-bold px-6 py-6 h-auto shadow-lg hover:scale-105 transition-all flex-1 md:flex-none">
+                        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                            <Button variant="secondary" className="bg-white text-indigo-950 hover:bg-slate-100 font-bold px-6 py-6 h-auto shadow-lg hover:scale-105 transition-all w-full sm:w-auto flex-1 md:flex-none justify-center">
                                 Gerenciar
                             </Button>
-                            <Link to="/admin/leitor" className="flex-1 md:flex-none">
-                                <Button className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white font-black px-6 py-6 h-auto shadow-xl hover:scale-105 transition-all flex flex-col gap-1 items-center">
+                            <Link to="/admin/leitor" className="w-full sm:w-auto flex-1 md:flex-none">
+                                <Button className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white font-black px-6 py-6 h-auto shadow-xl hover:scale-105 transition-all flex flex-col gap-1 items-center justify-center">
                                     <QrCode className="h-6 w-6" />
                                     <span className="text-xs uppercase tracking-widest">Ler QR</span>
                                 </Button>
@@ -120,58 +120,65 @@ export default function DashboardPage() {
                 </CardContent>
             </Card>
 
-            <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
+            <div className="grid gap-4 grid-cols-2 sm:grid-cols-2 md:grid-cols-4">
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Confirmado</CardTitle>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
+                        <CardTitle className="text-xs sm:text-sm font-medium">Total Confirmado</CardTitle>
                         <CheckCircle className="h-4 w-4 text-green-500" />
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-4 pt-0">
                         <div className="text-2xl font-bold">{stats.confirmed}</div>
                         <p className="text-xs text-muted-foreground opacity-70">Presença garantida</p>
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Ausentes</CardTitle>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
+                        <CardTitle className="text-xs sm:text-sm font-medium">Ausentes</CardTitle>
                         <XCircle className="h-4 w-4 text-red-500" />
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-4 pt-0">
                         <div className="text-2xl font-bold">{stats.absent}</div>
                         <p className="text-xs text-muted-foreground opacity-70">Com justificativa</p>
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Check-ins (Presencial)</CardTitle>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
+                        <CardTitle className="text-xs sm:text-sm font-medium">Check-ins</CardTitle>
                         <QrCode className="h-4 w-4 text-indigo-500" />
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-4 pt-0">
                         <div className="text-2xl font-bold">{stats.checkins}</div>
                         <p className="text-xs text-muted-foreground opacity-70">Leram o QR Code</p>
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
+                        <CardTitle className="text-xs sm:text-sm font-medium">Pendentes</CardTitle>
                         <AlertTriangle className="h-4 w-4 text-orange-500" />
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-4 pt-0">
                         <div className="text-2xl font-bold">{stats.pending}</div>
                         <p className="text-xs text-muted-foreground opacity-70">Aguardando resposta</p>
                     </CardContent>
                 </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Respostas</CardTitle>
+                <Card className="col-span-2 sm:col-span-1 md:col-span-4 lg:col-span-1 hidden md:block">
+                    {/* Hidden on mobile if not needed or shown as extra? 
+                         Wait, the original code had 5 cards in a 4-col grid. 
+                         The 5th card wrapped.
+                         Ideally on mobile: 2 cols + 2 cols + 1 col (full width).
+                         I'll make the "Total Respostas" take full width on mobile (col-span-2) to look nice.
+                     */}
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
+                        <CardTitle className="text-xs sm:text-sm font-medium">Total Respostas</CardTitle>
                         <Users className="h-4 w-4 text-slate-500" />
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-4 pt-0">
                         <div className="text-2xl font-bold">{stats.total}</div>
                         <p className="text-xs text-muted-foreground opacity-70">Interações totais</p>
                     </CardContent>
                 </Card>
             </div>
+
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
                 {/* Column 1: Check-ins (Most Important) */}
