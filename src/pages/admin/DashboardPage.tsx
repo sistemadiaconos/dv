@@ -78,11 +78,11 @@ export default function DashboardPage() {
                 <div className="absolute -right-20 -top-20 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl group-hover:bg-indigo-500/20 transition-colors pointer-events-none" />
 
                 <CardContent className="p-8 relative z-10">
-                    <div className="flex items-start justify-between">
-                        <div className="space-y-4">
+                    <div className="flex flex-col md:flex-row items-start justify-between gap-6">
+                        <div className="space-y-4 w-full">
                             <div>
                                 <p className="text-indigo-300 text-xs font-black uppercase tracking-widest mb-1">Próxima Reunião</p>
-                                <h3 className="text-4xl font-black tracking-tight">{meeting.titulo}</h3>
+                                <h3 className="text-3xl md:text-4xl font-black tracking-tight">{meeting.titulo}</h3>
                             </div>
                             <div className="flex flex-wrap gap-6 mt-6">
                                 <div className="flex items-center gap-3 text-slate-200">
@@ -105,20 +105,22 @@ export default function DashboardPage() {
                                 </div>
                             </div>
                         </div>
-                        <Button variant="secondary" className="bg-white text-indigo-950 hover:bg-slate-100 font-bold px-6 py-6 h-auto shadow-lg hover:scale-105 transition-all">
-                            Gerenciar Reunião
-                        </Button>
-                        <Link to="/admin/leitor">
-                            <Button className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white font-black px-6 py-6 h-auto shadow-xl hover:scale-105 transition-all flex flex-col gap-1 items-center">
-                                <QrCode className="h-6 w-6" />
-                                <span className="text-xs uppercase tracking-widest">Ler QR Code</span>
+                        <div className="flex gap-3 w-full md:w-auto">
+                            <Button variant="secondary" className="bg-white text-indigo-950 hover:bg-slate-100 font-bold px-6 py-6 h-auto shadow-lg hover:scale-105 transition-all flex-1 md:flex-none">
+                                Gerenciar
                             </Button>
-                        </Link>
+                            <Link to="/admin/leitor" className="flex-1 md:flex-none">
+                                <Button className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white font-black px-6 py-6 h-auto shadow-xl hover:scale-105 transition-all flex flex-col gap-1 items-center">
+                                    <QrCode className="h-6 w-6" />
+                                    <span className="text-xs uppercase tracking-widest">Ler QR</span>
+                                </Button>
+                            </Link>
+                        </div>
                     </div>
                 </CardContent>
             </Card>
 
-            <div className="grid gap-4 md:grid-cols-4">
+            <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Total Confirmado</CardTitle>
