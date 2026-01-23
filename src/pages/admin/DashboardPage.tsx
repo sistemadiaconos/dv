@@ -9,7 +9,7 @@ import { formatDateWithWeekday } from "../../lib/utils";
 
 export default function DashboardPage() {
     const [meeting, setMeeting] = useState<Reuniao | null>(null);
-    const [stats, setStats] = useState({ total: 0, confirmed: 0, absent: 0, pending: 0, confirmations: [] as any[] });
+    const [stats, setStats] = useState({ total: 0, confirmed: 0, absent: 0, pending: 0, checkins: 0, confirmations: [] as any[] });
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -137,6 +137,16 @@ export default function DashboardPage() {
                     <CardContent>
                         <div className="text-2xl font-bold">{stats.absent}</div>
                         <p className="text-xs text-muted-foreground opacity-70">Com justificativa</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Check-ins (Presencial)</CardTitle>
+                        <QrCode className="h-4 w-4 text-indigo-500" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{stats.checkins}</div>
+                        <p className="text-xs text-muted-foreground opacity-70">Leram o QR Code</p>
                     </CardContent>
                 </Card>
                 <Card>

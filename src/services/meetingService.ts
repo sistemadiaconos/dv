@@ -70,12 +70,14 @@ export const meetingService = {
         const confirmed = confirmations.filter(c => c.presenca === 'Confirmado').length;
         const absent = confirmations.filter(c => c.presenca === 'Ausente').length;
         const pending = confirmations.filter(c => c.presenca === 'Pendente').length;
+        const checkins = confirmations.filter(c => (c as any).checkin_em).length; // Cast as any because checkin_em might not be in generated types yet
 
         return {
             total,
             confirmed,
             absent,
             pending,
+            checkins,
             confirmations // Return raw data for detailed lists if needed
         };
     },
