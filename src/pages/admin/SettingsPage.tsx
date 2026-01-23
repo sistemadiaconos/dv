@@ -109,7 +109,7 @@ export default function SettingsPage() {
                 { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } }
             );
 
-            const { data, error } = await tempSupabase.auth.signUp({
+            const { error } = await tempSupabase.auth.signUp({
                 email: newUserEmail,
                 password: newUserPass
             });
