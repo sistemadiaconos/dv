@@ -31,6 +31,12 @@ export default function SettingsPage() {
         loadSettings();
     }, []);
 
+    useEffect(() => {
+        if (activeTab === 'usuarios') {
+            loadUsers();
+        }
+    }, [activeTab]);
+
     async function loadSettings() {
         setLoading(true);
         try {
@@ -42,6 +48,21 @@ export default function SettingsPage() {
             console.error(error);
         }
         setLoading(false);
+    }
+
+    async function loadUsers() {
+        setLoadingUsers(true);
+        setRpcError(false);
+        try {
+            const list = await settingsService.getUsersList();
+            setUsersList(list);
+        } catch (err: any) {
+            console.error(err);
+            if (err.message && (err.message.includes('function') || err.message.includes('permission'))) {
+                setRpcError(true);
+            }
+        }
+        setLoadingUsers(false);
     }
 
     async function handleSaveLogo() {
@@ -100,6 +121,7 @@ export default function SettingsPage() {
             alert("Usuário criado com sucesso! Ele já pode fazer login.");
             setNewUserEmail("");
             setNewUserPass("");
+            loadUsers(); // Reload list after creation
         } catch (error: any) {
             console.error(error);
             alert("Erro ao criar usuário: " + error.message);
@@ -255,7 +277,6 @@ export default function SettingsPage() {
 
             {activeTab === 'usuarios' && (
                 <div className="max-w-2xl animate-in slide-in-from-right-2 duration-300">
-                    {/* Create User Card */}
                     <Card className="glass-card shadow-lg border-t-4 border-t-blue-500">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
@@ -341,4 +362,6 @@ export default function SettingsPage() {
                     </Card>
                 </div>
             )}
+        </div>
+    );
 }
