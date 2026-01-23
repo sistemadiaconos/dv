@@ -57,10 +57,10 @@ export default function SettingsPage() {
             const list = await settingsService.getUsersList();
             setUsersList(list);
         } catch (err: any) {
-            console.error(err);
-            if (err.message && (err.message.includes('function') || err.message.includes('permission'))) {
-                setRpcError(true);
-            }
+            console.error("Erro RPC:", err);
+            // Always show warning for now to help debug, with the error message
+            setRpcError(true);
+            alert("Debug Error: " + err.message);
         }
         setLoadingUsers(false);
     }
