@@ -22,6 +22,11 @@ export default function SettingsPage() {
     const [newUserPass, setNewUserPass] = useState("");
     const [creatingUser, setCreatingUser] = useState(false);
 
+    // User List state
+    const [usersList, setUsersList] = useState<any[]>([]);
+    const [loadingUsers, setLoadingUsers] = useState(false);
+    const [rpcError, setRpcError] = useState(false);
+
     useEffect(() => {
         loadSettings();
     }, []);
@@ -250,6 +255,7 @@ export default function SettingsPage() {
 
             {activeTab === 'usuarios' && (
                 <div className="max-w-2xl animate-in slide-in-from-right-2 duration-300">
+                    {/* Create User Card */}
                     <Card className="glass-card shadow-lg border-t-4 border-t-blue-500">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
@@ -288,13 +294,51 @@ export default function SettingsPage() {
                                     </Button>
                                 </div>
                                 <p className="text-xs text-muted-foreground text-center pt-2">
-                                    (Devido à segurança, não é possível listar todos os usuários aqui sem acesso direto ao banco de dados).
+                                    (Todas as ações ficam registradas).
                                 </p>
                             </form>
                         </CardContent>
                     </Card>
+
+                    {/* List Users Card */}
+                    <Card className="glass-card shadow-lg border-t-4 border-t-purple-500 mt-6">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Users className="h-5 w-5 text-purple-500" /> Usuários Cadastrados
+                            </CardTitle>
+                            <CardDescription>
+                                Lista de administradores com acesso ao sistema.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {rpcError ? (
+                                <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-yellow-600 text-sm">
+                                    <p className="font-bold">⚠️ Configuração Necessária</p>
+                                    <p className="mt-1">Para visualizar a lista de usuários, é necessário executar um script de permissão no banco de dados.</p>
+                                    <p className="mt-2 text-xs">Vá no Supabase &gt; SQL Editor e rode o script <code>migration_list_users.sql</code>.</p>
+                                </div>
+                            ) : loadingUsers ? (
+                                <div className="text-center py-4 text-muted-foreground">Carregando lista...</div>
+                            ) : (
+                                <div className="space-y-2">
+                                    {usersList.map((u, i) => (
+                                        <div key={u.id || i} className="flex items-center justify-between p-3 rounded-lg bg-card/50 border border-border">
+                                            <div>
+                                                <p className="font-medium text-sm">{u.email}</p>
+                                                <p className="text-[10px] text-muted-foreground">
+                                                    Criado em: {new Date(u.created_at).toLocaleDateString()}
+                                                </p>
+                                            </div>
+                                            <div className="text-xs text-muted-foreground">
+                                                {u.last_sign_in_at ? `Último acesso: ${new Date(u.last_sign_in_at).toLocaleDateString()}` : 'Nunca acessou'}
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {usersList.length === 0 && <p className="text-center text-muted-foreground text-sm">Nenhum usuário encontrado.</p>}
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
                 </div>
             )}
-        </div>
-    );
 }

@@ -104,5 +104,11 @@ export const settingsService = {
 
         if (error) throw error;
         return true;
+    },
+
+    async getUsersList() {
+        const { data, error } = await supabase.rpc('get_users_list');
+        if (error) throw error;
+        return data as { id: string; email: string; created_at: string; last_sign_in_at: string }[];
     }
 };
