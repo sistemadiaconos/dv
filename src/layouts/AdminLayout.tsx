@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { LayoutDashboard, Users, Calendar, LogOut, ShieldCheck, Settings, Menu, X } from "lucide-react";
 import { cn } from "../lib/utils";
@@ -16,6 +16,24 @@ export function AdminLayout() {
         await supabase.auth.signOut();
         navigate("/login");
     };
+
+    useEffect(() => {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (!session) {
+                navigate("/login");
+            }
+        });
+
+        const {
+            data: { subscription },
+        } = supabase.auth.onAuthStateChange((_event, session) => {
+            if (!session) {
+                navigate("/login");
+            }
+        });
+
+        return () => subscription.unsubscribe();
+    }, [navigate]);
 
     const navItems = [
         { href: "/admin", icon: LayoutDashboard, label: "Dashboard" },

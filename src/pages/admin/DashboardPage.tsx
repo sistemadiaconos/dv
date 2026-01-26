@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Calendar, Users, CheckCircle, XCircle, Clock, AlertTriangle, QrCode, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { Modal } from "../../components/ui/modal";
 import { meetingService } from "../../services/meetingService";
 import type { Reuniao } from "../../services/meetingService";
 import { Button } from "../../components/ui/button";
@@ -15,12 +16,21 @@ export default function DashboardPage() {
         absent: 0,
         pending: 0,
         checkins: 0,
+        totalParticipants: 0,
+        missing: 0,
         confirmations: [] as any[],
         recentCheckins: [] as any[],
         recentAbsences: [] as any[],
         recentConfirmations: [] as any[]
     });
     const [loading, setLoading] = useState(true);
+    const [showAllConfirmations, setShowAllConfirmations] = useState(false);
+    const [allConfirmations, setAllConfirmations] = useState<any[]>([]);
+    const [loadingAllConfirmations, setLoadingAllConfirmations] = useState(false);
+
+    const [showMissingConfirmations, setShowMissingConfirmations] = useState(false);
+    const [missingConfirmations, setMissingConfirmations] = useState<any[]>([]);
+    const [loadingMissingConfirmations, setLoadingMissingConfirmations] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -28,17 +38,22 @@ export default function DashboardPage() {
 
     async function loadData() {
         setLoading(true);
-        const activeMeeting = await meetingService.getActiveMeeting();
-        setMeeting(activeMeeting);
+        try {
+            const activeMeeting = await meetingService.getActiveMeeting();
+            setMeeting(activeMeeting);
 
-        if (activeMeeting) {
-            const meetingStats = await meetingService.getMeetingStats(activeMeeting.id);
-            if (meetingStats) {
-                // @ts-ignore
-                setStats(meetingStats);
+            if (activeMeeting) {
+                const meetingStats = await meetingService.getMeetingStats(activeMeeting.id);
+                if (meetingStats) {
+                    // @ts-ignore
+                    setStats(meetingStats);
+                }
             }
+        } catch (error) {
+            console.error("Failed to load dashboard data:", error);
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     }
 
     async function handleDeleteConfirmation(id: string, name: string) {
@@ -55,6 +70,54 @@ export default function DashboardPage() {
                 recentConfirmations: prev.recentConfirmations.filter(c => c.id !== id),
             }));
             loadData(); // Reload to be safe and accurate
+        } catch (error) {
+            console.error(error);
+            alert("Erro ao remover participante.");
+        }
+    }
+
+    async function handleViewAllConfirmations() {
+        setShowAllConfirmations(true);
+        if (meeting && allConfirmations.length === 0) {
+            setLoadingAllConfirmations(true);
+            try {
+                const data = await meetingService.getAllConfirmations(meeting.id);
+                setAllConfirmations(data);
+            } catch (error) {
+                console.error("Erro ao carregar todas as confirmações", error);
+            } finally {
+                setLoadingAllConfirmations(false);
+            }
+        }
+    }
+
+    async function handleViewMissingConfirmations() {
+        setShowMissingConfirmations(true);
+        if (meeting) { // Always reload missing to be accurate? Or cache? Let's generic reload for now.
+            setLoadingMissingConfirmations(true);
+            try {
+                const data = await meetingService.getMissingParticipants(meeting.id);
+                setMissingConfirmations(data);
+            } catch (error) {
+                console.error("Erro ao carregar lista de ausentes", error);
+            } finally {
+                setLoadingMissingConfirmations(false);
+            }
+        }
+    }
+
+    async function handleRemoveFromModal(id: string, name: string) {
+        if (!confirm(`Tem certeza que deseja remover ${name}?`)) return;
+
+        try {
+            await meetingService.removeConfirmation(id);
+            setAllConfirmations(prev => prev.filter(c => c.id !== id));
+            // Also update the main stats preview
+            setStats(prev => ({
+                ...prev,
+                recentConfirmations: prev.recentConfirmations.filter(c => c.id !== id),
+                confirmed: Math.max(0, prev.confirmed - 1)
+            }));
         } catch (error) {
             console.error(error);
             alert("Erro ao remover participante.");
@@ -132,61 +195,101 @@ export default function DashboardPage() {
                 </CardContent>
             </Card>
 
-            <div className="grid gap-4 grid-cols-2 sm:grid-cols-2 md:grid-cols-4">
-                <Card>
+            {/* Section: General Overview (Member Base) */}
+            <div className="grid gap-4 grid-cols-2 md:grid-cols-4 lg:grid-cols-6">
+                {/* Total Cadastrados */}
+                <Card className="col-span-2 sm:col-span-1 lg:col-span-2">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
-                        <CardTitle className="text-xs sm:text-sm font-medium">Total Confirmado</CardTitle>
+                        <CardTitle className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400">Total Cadastrados</CardTitle>
+                        <Users className="h-4 w-4 text-slate-400" />
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0">
+                        <div className="text-2xl font-bold text-foreground">{stats.totalParticipants}</div>
+                        <p className="text-xs text-muted-foreground opacity-80">Membros na base</p>
+                    </CardContent>
+                </Card>
+
+                {/* Total Respostas (moved here) */}
+                <Card className="col-span-2 sm:col-span-1 lg:col-span-2 bg-indigo-50/50 dark:bg-indigo-900/10 border-indigo-100 dark:border-indigo-900/30">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
+                        <CardTitle className="text-xs sm:text-sm font-medium text-indigo-600 dark:text-indigo-400">Total Respostas</CardTitle>
+                        <Users className="h-4 w-4 text-indigo-400" />
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0">
+                        <div className="text-2xl font-bold text-indigo-700 dark:text-indigo-300">{stats.total}</div>
+                        <p className="text-xs text-indigo-500/80 dark:text-indigo-400/60">Interações nesta reunião</p>
+                    </CardContent>
+                </Card>
+
+                <div className="col-span-2 hidden lg:block"></div>
+            </div>
+
+            {/* Section: Meeting Status (Active) */}
+            <div className="grid gap-4 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+                <Card className="border-green-100 dark:border-green-900/30 bg-green-50/30 dark:bg-green-900/5">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
+                        <CardTitle className="text-xs sm:text-sm font-medium text-green-700 dark:text-green-400">Confirmados</CardTitle>
                         <CheckCircle className="h-4 w-4 text-green-500" />
                     </CardHeader>
                     <CardContent className="p-4 pt-0">
-                        <div className="text-2xl font-bold">{stats.confirmed}</div>
-                        <p className="text-xs text-muted-foreground opacity-70">Presença garantida</p>
+                        <div className="text-2xl font-bold text-green-700 dark:text-green-400">{stats.confirmed}</div>
+                        <p className="text-xs text-green-600/70 dark:text-green-500/60">Presença garantida</p>
                     </CardContent>
                 </Card>
-                <Card>
+
+                <Card className="border-red-100 dark:border-red-900/30 bg-red-50/30 dark:bg-red-900/5">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
-                        <CardTitle className="text-xs sm:text-sm font-medium">Ausentes</CardTitle>
+                        <CardTitle className="text-xs sm:text-sm font-medium text-red-700 dark:text-red-400">Ausentes</CardTitle>
                         <XCircle className="h-4 w-4 text-red-500" />
                     </CardHeader>
                     <CardContent className="p-4 pt-0">
-                        <div className="text-2xl font-bold">{stats.absent}</div>
-                        <p className="text-xs text-muted-foreground opacity-70">Com justificativa</p>
+                        <div className="text-2xl font-bold text-red-700 dark:text-red-400">{stats.absent}</div>
+                        <p className="text-xs text-red-600/70 dark:text-red-500/60">Com justificativa</p>
                     </CardContent>
                 </Card>
+
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
-                        <CardTitle className="text-xs sm:text-sm font-medium">Check-ins</CardTitle>
+                        <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Check-ins</CardTitle>
                         <QrCode className="h-4 w-4 text-indigo-500" />
                     </CardHeader>
                     <CardContent className="p-4 pt-0">
-                        <div className="text-2xl font-bold">{stats.checkins}</div>
-                        <p className="text-xs text-muted-foreground opacity-70">Leram o QR Code</p>
+                        <div className="text-2xl font-bold text-foreground">{stats.checkins}</div>
+                        <p className="text-xs text-muted-foreground opacity-80">Leram o QR Code</p>
                     </CardContent>
                 </Card>
+
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
-                        <CardTitle className="text-xs sm:text-sm font-medium">Pendentes</CardTitle>
+                        <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Pendentes</CardTitle>
                         <AlertTriangle className="h-4 w-4 text-orange-500" />
                     </CardHeader>
                     <CardContent className="p-4 pt-0">
-                        <div className="text-2xl font-bold">{stats.pending}</div>
-                        <p className="text-xs text-muted-foreground opacity-70">Aguardando resposta</p>
+                        <div className="text-2xl font-bold text-foreground">{stats.pending}</div>
+                        <p className="text-xs text-muted-foreground opacity-80">Responderam "Talvez"</p>
                     </CardContent>
                 </Card>
-                <Card className="col-span-2 sm:col-span-1 md:col-span-4 lg:col-span-1 hidden md:block">
-                    {/* Hidden on mobile if not needed or shown as extra? 
-                         Wait, the original code had 5 cards in a 4-col grid. 
-                         The 5th card wrapped.
-                         Ideally on mobile: 2 cols + 2 cols + 1 col (full width).
-                         I'll make the "Total Respostas" take full width on mobile (col-span-2) to look nice.
-                     */}
+
+                <Card className="col-span-2 sm:col-span-1 border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/20">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
-                        <CardTitle className="text-xs sm:text-sm font-medium">Total Respostas</CardTitle>
-                        <Users className="h-4 w-4 text-slate-500" />
+                        <CardTitle className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400">Faltam Responder</CardTitle>
+                        <AlertTriangle className="h-4 w-4 text-slate-400" />
                     </CardHeader>
                     <CardContent className="p-4 pt-0">
-                        <div className="text-2xl font-bold">{stats.total}</div>
-                        <p className="text-xs text-muted-foreground opacity-70">Interações totais</p>
+                        <div className="flex items-end justify-between">
+                            <div>
+                                <div className="text-2xl font-bold text-slate-700 dark:text-slate-300">{stats.missing}</div>
+                                <p className="text-xs text-slate-500 dark:text-slate-500">Silenciosos</p>
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 text-xs px-2.5 ml-2 border-indigo-200 text-indigo-600 hover:bg-indigo-50 dark:border-indigo-900 dark:text-indigo-400 dark:hover:bg-indigo-900/50"
+                                onClick={handleViewMissingConfirmations}
+                            >
+                                Ver lista
+                            </Button>
+                        </div>
                     </CardContent>
                 </Card>
             </div>
@@ -225,9 +328,12 @@ export default function DashboardPage() {
                                 </div>
                             ))}
                             {stats.recentCheckins.length === 0 && (
-                                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                                    <QrCode className="h-10 w-10 mb-2 opacity-20" />
-                                    <p className="text-sm font-medium">Nenhum check-in realizado ainda.</p>
+                                <div className="flex flex-col items-center justify-center py-16 text-muted-foreground border-2 border-dashed border-border/50 rounded-xl bg-muted/20">
+                                    <div className="h-16 w-16 bg-muted/50 rounded-full flex items-center justify-center mb-4">
+                                        <QrCode className="h-8 w-8 opacity-40" />
+                                    </div>
+                                    <p className="text-sm font-medium text-foreground">Aguardando leituras</p>
+                                    <p className="text-xs opacity-60 max-w-[200px] text-center mt-1">Os check-ins via QR Code aparecerão aqui em tempo real.</p>
                                 </div>
                             )}
                         </div>
@@ -263,9 +369,19 @@ export default function DashboardPage() {
                     {/* Confirmed (Site) */}
                     <Card className="glass-card border-none">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-lg font-bold flex items-center gap-2">
-                                <CheckCircle className="h-4 w-4 text-green-500" /> Confirmados Recentemente
-                            </CardTitle>
+                            <div className="flex items-center justify-between">
+                                <CardTitle className="text-lg font-bold flex items-center gap-2">
+                                    <CheckCircle className="h-4 w-4 text-green-500" /> Confirmados Recentemente
+                                </CardTitle>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 text-xs font-medium text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10"
+                                    onClick={handleViewAllConfirmations}
+                                >
+                                    Ver todos
+                                </Button>
+                            </div>
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-1">
@@ -293,6 +409,73 @@ export default function DashboardPage() {
                     </Card>
                 </div>
             </div>
+
+            {/* Modal de Todos os Confirmados */}
+            <Modal
+                isOpen={showAllConfirmations}
+                onClose={() => setShowAllConfirmations(false)}
+                title={`Confirmados (${allConfirmations.length})`}
+                className="max-w-xl"
+            >
+                {loadingAllConfirmations ? (
+                    <div className="py-8 text-center text-muted-foreground">Carregando lista...</div>
+                ) : (
+                    <div className="space-y-1">
+                        {allConfirmations.map((c) => (
+                            <div key={c.id} className="flex items-center justify-between py-3 border-b border-border/50 last:border-0 hover:bg-muted/50 px-2 rounded-lg group">
+                                <div className="overflow-hidden">
+                                    <p className="text-sm font-medium truncate text-foreground">{c.participantes?.nome}</p>
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-xs text-muted-foreground">{new Date(c.data_confirmacao).toLocaleDateString()}</p>
+                                        <span className="text-[10px] bg-secondary px-1.5 py-0.5 rounded text-secondary-foreground uppercase tracking-wider">{c.participantes?.departamento || 'Participante'}</span>
+                                    </div>
+                                </div>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onClick={() => handleRemoveFromModal(c.id, c.participantes?.nome)}
+                                    title="Remover confirmação"
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        ))}
+                        {allConfirmations.length === 0 && (
+                            <div className="py-8 text-center text-muted-foreground">
+                                Nenhuma confirmação encontrada.
+                            </div>
+                        )}
+                    </div>
+                )}
+            </Modal>
+            {/* Modal de Faltam Responder */}
+            <Modal
+                isOpen={showMissingConfirmations}
+                onClose={() => setShowMissingConfirmations(false)}
+                title={`Faltam Responder (${missingConfirmations.length})`}
+                className="max-w-xl"
+            >
+                {loadingMissingConfirmations ? (
+                    <div className="py-8 text-center text-muted-foreground">Carregando lista...</div>
+                ) : (
+                    <div className="space-y-1">
+                        {missingConfirmations.map((p) => (
+                            <div key={p.id} className="flex items-center justify-between py-3 border-b border-border/50 last:border-0 hover:bg-muted/50 px-2 rounded-lg">
+                                <div className="overflow-hidden">
+                                    <p className="text-sm font-medium truncate text-foreground">{p.nome}</p>
+                                    <p className="text-xs text-muted-foreground uppercase tracking-wider">{p.departamento || 'Sem departamento'}</p>
+                                </div>
+                            </div>
+                        ))}
+                        {missingConfirmations.length === 0 && (
+                            <div className="py-8 text-center text-muted-foreground">
+                                Todos já responderam! 🎉
+                            </div>
+                        )}
+                    </div>
+                )}
+            </Modal>
         </div>
     );
 }

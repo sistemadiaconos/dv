@@ -67,7 +67,8 @@ export const meetingService = {
             { count: checkins },
             { data: recentCheckins },
             { data: recentAbsences },
-            { data: recentConfirmations }
+            { data: recentConfirmations },
+            totalParticipantsCount
         ] = await Promise.all([
             // Counts (Lightweight)
             supabase.from('confirmacoes').select('*', { count: 'exact', head: true }).eq('id_reuniao', meetingId),
@@ -96,20 +97,72 @@ export const meetingService = {
                 .eq('presenca', 'Confirmado')
                 .is('checkin_em', null)
                 .order('data_confirmacao', { ascending: false })
-                .limit(5)
+                .limit(5),
+
+            supabase.from('participantes').select('*', { count: 'exact', head: true })
         ]);
 
+        const totalParticipants = totalParticipantsCount?.count || 0;
+
         return {
+            totalParticipants,
             total: total || 0,
             confirmed: confirmed || 0,
             absent: absent || 0,
             pending: pending || 0,
             checkins: checkins || 0,
+            missing: Math.max(0, totalParticipants - (total || 0)),
             recentCheckins: recentCheckins || [],
             recentAbsences: recentAbsences || [],
             recentConfirmations: recentConfirmations || [],
             confirmations: [] // Deprecated: Returning empty to signal optimized mode
         };
+    },
+
+    async getAllConfirmations(meetingId: string) {
+        const { data, error } = await supabase
+            .from('confirmacoes')
+            .select('*, participantes (nome, departamento)')
+            .eq('id_reuniao', meetingId)
+            .eq('presenca', 'Confirmado')
+            .is('checkin_em', null)
+            .order('data_confirmacao', { ascending: false });
+
+        if (error) {
+            console.error('Error fetching all confirmations:', error);
+            return [];
+        }
+
+        return data || [];
+    },
+
+    async getMissingParticipants(meetingId: string) {
+        // 1. Get all participants
+        const { data: participants, error: partError } = await supabase
+            .from('participantes')
+            .select('id, nome, departamento, telefone');
+
+        if (partError) {
+            console.error('Error fetching participants:', partError);
+            return [];
+        }
+
+        // 2. Get all confirmations for this meeting (just IDs)
+        const { data: confirmations, error: confError } = await supabase
+            .from('confirmacoes')
+            .select('id_participante')
+            .eq('id_reuniao', meetingId);
+
+        if (confError) {
+            console.error('Error fetching confirmations:', confError);
+            return [];
+        }
+
+        // 3. Filter out those who have confirmed (any status)
+        const confirmedIds = new Set(confirmations?.map(c => c.id_participante));
+        const missing = participants?.filter(p => !confirmedIds.has(p.id)) || [];
+
+        return missing;
     },
 
     async removeConfirmation(id: string) {
