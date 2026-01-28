@@ -6,6 +6,7 @@ import { Button } from "../components/ui/button";
 import { supabase } from "../lib/supabase";
 
 import { ModeToggle } from "../components/mode-toggle";
+import { TourGuide } from "../components/TourGuide";
 
 export function AdminLayout() {
     const location = useLocation();
@@ -46,7 +47,7 @@ export function AdminLayout() {
     const NavContent = () => (
         <>
             <div className="p-6 border-b border-border flex justify-between items-center">
-                <div>
+                <div id="tour-welcome">
                     <h1 className="text-xl font-bold text-foreground">Admin Panel</h1>
                     <p className="text-xs text-muted-foreground">MVP Confirmações</p>
                 </div>
@@ -56,7 +57,7 @@ export function AdminLayout() {
                 </Button>
             </div>
 
-            <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+            <nav id="tour-sidebar" className="flex-1 p-4 space-y-1 overflow-y-auto">
                 {navItems.map((item) => {
                     const Icon = item.icon;
                     const isActive = location.pathname === item.href || (item.href !== '/admin' && location.pathname.startsWith(item.href));
@@ -81,10 +82,11 @@ export function AdminLayout() {
             </nav>
 
             <div className="p-4 border-t border-border mt-auto">
-                <div className="mb-4 flex justify-center">
+                <div id="tour-theme-toggle" className="mb-4 flex justify-center">
                     <ModeToggle />
                 </div>
                 <Button
+                    id="tour-logout"
                     variant="ghost"
                     className="w-full justify-start text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20"
                     onClick={handleLogout}
@@ -131,6 +133,7 @@ export function AdminLayout() {
                     <Outlet />
                 </div>
             </main>
+            <TourGuide />
         </div>
     );
 }
