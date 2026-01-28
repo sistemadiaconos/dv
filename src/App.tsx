@@ -18,6 +18,7 @@ const ConfirmationsPage = lazy(() => import("./pages/admin/ConfirmationsPage"));
 const AuthorizationsPage = lazy(() => import("./pages/admin/AuthorizationsPage"));
 const SettingsPage = lazy(() => import("./pages/admin/SettingsPage"));
 const AdminScannerPage = lazy(() => import("./pages/admin/AdminScannerPage"));
+const MissingResponsesPage = lazy(() => import("./pages/admin/MissingResponsesPage"));
 
 export default function App() {
   return (
@@ -38,6 +39,7 @@ export default function App() {
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<DashboardPage />} />
               <Route path="participantes" element={<ParticipantsPage />} />
+              <Route path="pendentes" element={<MissingResponsesPage />} />
               <Route path="reunioes" element={<MeetingsPage />} />
               <Route path="confirmacoes" element={<ConfirmationsPage />} />
               <Route path="autorizacoes" element={<AuthorizationsPage />} />

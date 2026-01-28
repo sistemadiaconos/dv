@@ -28,10 +28,6 @@ export default function DashboardPage() {
     const [allConfirmations, setAllConfirmations] = useState<any[]>([]);
     const [loadingAllConfirmations, setLoadingAllConfirmations] = useState(false);
 
-    const [showMissingConfirmations, setShowMissingConfirmations] = useState(false);
-    const [missingConfirmations, setMissingConfirmations] = useState<any[]>([]);
-    const [loadingMissingConfirmations, setLoadingMissingConfirmations] = useState(false);
-
     useEffect(() => {
         loadData();
     }, []);
@@ -91,20 +87,7 @@ export default function DashboardPage() {
         }
     }
 
-    async function handleViewMissingConfirmations() {
-        setShowMissingConfirmations(true);
-        if (meeting) { // Always reload missing to be accurate? Or cache? Let's generic reload for now.
-            setLoadingMissingConfirmations(true);
-            try {
-                const data = await meetingService.getMissingParticipants(meeting.id);
-                setMissingConfirmations(data);
-            } catch (error) {
-                console.error("Erro ao carregar lista de ausentes", error);
-            } finally {
-                setLoadingMissingConfirmations(false);
-            }
-        }
-    }
+
 
     async function handleRemoveFromModal(id: string, name: string) {
         if (!confirm(`Tem certeza que deseja remover ${name}?`)) return;
@@ -281,14 +264,15 @@ export default function DashboardPage() {
                                 <div className="text-2xl font-bold text-slate-700 dark:text-slate-300">{stats.missing}</div>
                                 <p className="text-xs text-slate-500 dark:text-slate-500">Silenciosos</p>
                             </div>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-7 text-xs px-2.5 ml-2 border-indigo-200 text-indigo-600 hover:bg-indigo-50 dark:border-indigo-900 dark:text-indigo-400 dark:hover:bg-indigo-900/50"
-                                onClick={handleViewMissingConfirmations}
-                            >
-                                Ver lista
-                            </Button>
+                            <Link to="/admin/pendentes">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-7 text-xs px-2.5 ml-2 border-indigo-200 text-indigo-600 hover:bg-indigo-50 dark:border-indigo-900 dark:text-indigo-400 dark:hover:bg-indigo-900/50"
+                                >
+                                    Ver lista
+                                </Button>
+                            </Link>
                         </div>
                     </CardContent>
                 </Card>
@@ -449,33 +433,7 @@ export default function DashboardPage() {
                     </div>
                 )}
             </Modal>
-            {/* Modal de Faltam Responder */}
-            <Modal
-                isOpen={showMissingConfirmations}
-                onClose={() => setShowMissingConfirmations(false)}
-                title={`Faltam Responder (${missingConfirmations.length})`}
-                className="max-w-xl"
-            >
-                {loadingMissingConfirmations ? (
-                    <div className="py-8 text-center text-muted-foreground">Carregando lista...</div>
-                ) : (
-                    <div className="space-y-1">
-                        {missingConfirmations.map((p) => (
-                            <div key={p.id} className="flex items-center justify-between py-3 border-b border-border/50 last:border-0 hover:bg-muted/50 px-2 rounded-lg">
-                                <div className="overflow-hidden">
-                                    <p className="text-sm font-medium truncate text-foreground">{p.nome}</p>
-                                    <p className="text-xs text-muted-foreground uppercase tracking-wider">{p.departamento || 'Sem departamento'}</p>
-                                </div>
-                            </div>
-                        ))}
-                        {missingConfirmations.length === 0 && (
-                            <div className="py-8 text-center text-muted-foreground">
-                                Todos já responderam! 🎉
-                            </div>
-                        )}
-                    </div>
-                )}
-            </Modal>
         </div>
     );
 }
+
