@@ -6,6 +6,7 @@ import { Input } from "../../components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card";
 import { authorizationService } from "../../services/authorizationService";
 import { settingsService } from "../../services/settingsService";
+import { participantService } from "../../services/participantService";
 import { supabase } from "../../lib/supabase";
 import { cn } from "../../lib/utils";
 
@@ -52,6 +53,18 @@ export default function RegistrationPage() {
 
     async function validatePhone() {
         setIsValidating(true);
+        const cleanPhone = celular.replace(/\D/g, '');
+
+        // 1. Check if already registered
+        const alreadyExists = await participantService.checkPhoneExists(cleanPhone);
+        if (alreadyExists) {
+            alert("Este número já está cadastrado no sistema!");
+            setIsValidating(false);
+            setIsAuthorized(null);
+            return;
+        }
+
+        // 2. Check authorization
         const authorized = await authorizationService.checkPhone(celular);
         setIsAuthorized(authorized);
         setIsValidating(false);

@@ -63,16 +63,17 @@ export default function MissingResponsesPage() {
 
         const headers = ["Nome", "Departamento", "Telefone"];
         const csvContent = [
-            headers.join(","),
+            headers.join(";"),
             ...participants.map(p => {
                 const nome = `"${p.nome || ''}"`;
                 const depto = `"${p.departamento || ''}"`;
                 const tel = `"${p.telefone || ''}"`;
-                return [nome, depto, tel].join(",");
+                return [nome, depto, tel].join(";");
             })
         ].join("\n");
 
-        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        // Adicionar BOM para garantir que o Excel reconheça o UTF-8
+        const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.setAttribute("href", url);

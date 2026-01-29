@@ -21,6 +21,20 @@ export const participantService = {
         return data || [];
     },
 
+    async checkPhoneExists(telefone: string): Promise<boolean> {
+        const { count, error } = await supabase
+            .from('participantes')
+            .select('*', { count: 'exact', head: true })
+            .eq('telefone', telefone);
+
+        if (error) {
+            console.error('Error checking phone:', error);
+            return false;
+        }
+
+        return (count || 0) > 0;
+    },
+
     async getParticipantById(id: string): Promise<Participante | null> {
         const { data, error } = await supabase
             .from('participantes')
