@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, Search, Edit2, Trash2, Upload } from "lucide-react";
+import { Plus, Search, Edit2, Trash2, Upload, AlertTriangle, Check } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card";
@@ -25,6 +25,88 @@ export default function ParticipantsPage() {
     const [showImport, setShowImport] = useState(false);
     const [importText, setImportText] = useState("");
     const [importing, setImporting] = useState(false);
+
+    // Duplicates State
+    const [showDuplicates, setShowDuplicates] = useState(false);
+    const [duplicateGroups, setDuplicateGroups] = useState<{ type: string, items: (Participante & { _count?: number })[] }[]>([]);
+    const [loadingDuplicates, setLoadingDuplicates] = useState(false);
+
+    useEffect(() => {
+        if (showDuplicates) {
+            findDuplicates();
+        }
+    }, [showDuplicates, participants]);
+
+    async function findDuplicates() {
+        setLoadingDuplicates(true);
+        const nameGroups = new Map<string, Participante[]>();
+        const phoneGroups = new Map<string, Participante[]>();
+
+        participants.forEach(p => {
+            // Check Name
+            const n = p.nome.trim().toLowerCase();
+            if (!nameGroups.has(n)) nameGroups.set(n, []);
+            nameGroups.get(n)!.push(p);
+
+            // Check Phone
+            if (p.telefone) {
+                const t = p.telefone.replace(/\D/g, '');
+                if (t.length > 5) {
+                    if (!phoneGroups.has(t)) phoneGroups.set(t, []);
+                    phoneGroups.get(t)!.push(p);
+                }
+            }
+        });
+
+        const groups: { type: string, items: (Participante & { _count?: number })[] }[] = [];
+        const idsToCheck: string[] = [];
+
+        nameGroups.forEach((items, _) => {
+            if (items.length > 1) {
+                groups.push({ type: `Nome Duplicado: "${items[0].nome}"`, items: [...items] });
+                items.forEach(i => idsToCheck.push(i.id));
+            }
+        });
+
+        phoneGroups.forEach((items, _) => {
+            if (items.length > 1) {
+                groups.push({ type: `Telefone Duplicado: "${items[0].telefone}"`, items: [...items] });
+                items.forEach(i => idsToCheck.push(i.id));
+            }
+        });
+
+        // Fetch stats for these duplicates if any
+        if (idsToCheck.length > 0) {
+            // We can do a raw query to count confirmations for these IDs
+            const { data, error: _ } = await supabase
+                .from('confirmacoes')
+                .select('id_participante', { count: 'exact', head: false })
+                .in('id_participante', idsToCheck);
+
+            // This just returns rows, we need to count them manually or use .rpc if available, 
+            // but for now let's just count occurrences in the returned array if it's not too huge.
+            // Actually, for a proper "count group by", Supabase JS is tricky without a view or rpc.
+            // Alternative: select id_participante for all confirmations of these users.
+
+            if (data) {
+                const counts: Record<string, number> = {};
+                data.forEach((row: any) => {
+                    counts[row.id_participante] = (counts[row.id_participante] || 0) + 1;
+                });
+
+                // Attach counts to items
+                groups.forEach(g => {
+                    g.items = g.items.map(item => ({
+                        ...item,
+                        _count: counts[item.id] || 0
+                    }));
+                });
+            }
+        }
+
+        setDuplicateGroups(groups);
+        setLoadingDuplicates(false);
+    }
 
     useEffect(() => {
         loadParticipants();
@@ -168,6 +250,10 @@ export default function ParticipantsPage() {
             <div className="flex items-center justify-between">
                 <h2 className="text-3xl font-bold tracking-tight">Participantes</h2>
                 <div className="flex gap-2">
+                    <Button variant="outline" className="hidden md:flex" onClick={() => setShowDuplicates(!showDuplicates)}>
+                        {showDuplicates ? <Check className="mr-2 h-4 w-4" /> : <AlertTriangle className="mr-2 h-4 w-4" />}
+                        {showDuplicates ? "Fechar Verificação" : "Verificar Duplicados"}
+                    </Button>
                     <Button variant="destructive" onClick={handleDeleteAll} disabled={participants.length === 0 || loading}>
                         <Trash2 className="mr-2 h-4 w-4" /> Apagar Todos
                     </Button>
@@ -213,6 +299,65 @@ export default function ParticipantsPage() {
                                 {importing ? "Importando..." : "Processar Importação"}
                             </Button>
                         </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            {showDuplicates && (
+                <Card className="mb-6 border-orange-200 dark:border-orange-900 bg-orange-50/50 dark:bg-orange-950/20">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <AlertTriangle className="h-5 w-5 text-orange-600" />
+                            Possíveis Duplicidades Encontradas
+                        </CardTitle>
+                        <CardDescription>
+                            Verifique os itens abaixo. Exclua as cópias desnecessárias.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {duplicateGroups.length === 0 ? (
+                            <p className="text-muted-foreground">Nenhuma duplicidade encontrada nos critérios (Nome exato ou Telefone igual).</p>
+                        ) : (
+                            duplicateGroups.map((group, idx) => (
+                                <div key={idx} className="border border-border rounded-lg p-4 bg-background/50">
+                                    <h4 className="font-bold text-sm text-foreground mb-3">{group.type}</h4>
+                                    <div className="space-y-2">
+                                        {group.items.map(p => (
+                                            <div key={p.id} className={`flex items-center justify-between p-2 rounded border text-sm ${(p._count || 0) > 0
+                                                ? 'bg-green-50/50 border-green-200 dark:bg-green-900/10 dark:border-green-900/30'
+                                                : 'bg-card border-border/50'
+                                                }`}>
+                                                <div className="flex flex-col">
+                                                    <span className="font-medium flex items-center gap-2">
+                                                        {p.nome}
+                                                        {(p._count || 0) > 0 && (
+                                                            <span className="text-[10px] bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 px-1.5 py-0.5 rounded-full font-bold">
+                                                                {p._count} Confirmação(ões)
+                                                            </span>
+                                                        )}
+                                                    </span>
+                                                    <span className="text-xs text-muted-foreground">{p.telefone} - {p.departamento}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs text-muted-foreground">ID: {p.id?.slice(0, 6)}...</span>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="destructive"
+                                                        onClick={() => handleDelete(p.id)}
+                                                        disabled={(p._count || 0) > 0}
+                                                        title={(p._count || 0) > 0 ? "Não é possível apagar pois possui histórico" : "Apagar cadastro vazio"}
+                                                    >
+                                                        <Trash2 className="h-3 w-3 mr-1" /> Apagar
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                        {loadingDuplicates && <p className="text-center text-sm text-muted-foreground">Analisando histórico...</p>}
+                        <Button variant="ghost" onClick={() => setShowDuplicates(false)}>Fechar Verificação</Button>
                     </CardContent>
                 </Card>
             )}
@@ -314,7 +459,7 @@ export default function ParticipantsPage() {
                                 </td>
                                 <td className="px-6 py-4 text-muted-foreground font-medium">{p.departamento}</td>
                                 <td className="px-6 py-4 text-right">
-                                    <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div className="flex justify-end gap-1 transition-opacity">
                                         <Button size="icon" variant="ghost" className="h-9 w-9 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/10" onClick={() => { setCurrentParticipant(p); setShowForm(true); }}>
                                             <Edit2 className="h-4 w-4" />
                                         </Button>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, Trash2, ShieldCheck, Search, Phone, FileUp, X, Edit2 } from "lucide-react";
+import { Plus, Trash2, ShieldCheck, Search, Phone, FileUp, X, Edit2, AlertTriangle, Users } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card";
@@ -16,6 +16,78 @@ export default function AuthorizationsPage() {
     const [importData, setImportData] = useState("");
     const [isImporting, setIsImporting] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
+
+    // Duplicates/Usage State
+    const [showDuplicates, setShowDuplicates] = useState(false);
+    const [duplicateAnalysis, setDuplicateAnalysis] = useState<{ type: string, items: (TelefoneAutorizado & { _usage?: string })[] }[]>([]);
+    const [analyzing, setAnalyzing] = useState(false);
+
+    useEffect(() => {
+        if (showDuplicates) {
+            analyzeNumbers();
+        }
+    }, [showDuplicates, phones]);
+
+    async function analyzeNumbers() {
+        setAnalyzing(true);
+        const groups: { type: string, items: (TelefoneAutorizado & { _usage?: string })[] }[] = [];
+
+        // 1. Check for duplicates within the list (should be rare due to DB constraints)
+        const phoneMap = new Map<string, TelefoneAutorizado[]>();
+        phones.forEach(p => {
+            const clean = p.celular.replace(/\D/g, '');
+            if (!phoneMap.has(clean)) phoneMap.set(clean, []);
+            phoneMap.get(clean)!.push(p);
+        });
+
+        phoneMap.forEach((items, number) => {
+            if (items.length > 1) {
+                groups.push({ type: `Número Duplicado na Lista: ${number}`, items: [...items] });
+            }
+        });
+
+        // 2. Check for usage (numbers already registered by participants)
+        try {
+            // Fetch all participants to compare (fetching just names/phones for efficiency)
+            // This searches... wait, searchParticipants needs a query.
+            // Better to use a new service method or just `supabase` query here if service doesn't have "getAll".
+            // Let's rely on what we have or add a simple query.
+            // Since we are in the page, we can import supabase.
+            const { data: allParticipants } = await import("../../lib/supabase").then(m => m.supabase)
+                .from('participantes')
+                .select('nome, telefone');
+
+            if (allParticipants) {
+                const usedPhones = new Map<string, string>(); // phone -> name
+                allParticipants.forEach(p => {
+                    if (p.telefone) {
+                        usedPhones.set(p.telefone.replace(/\D/g, ''), p.nome);
+                    }
+                });
+
+                const usedItems: (TelefoneAutorizado & { _usage?: string })[] = [];
+                phones.forEach(p => {
+                    const clean = p.celular.replace(/\D/g, '');
+                    if (usedPhones.has(clean)) {
+                        // This number is already in use
+                        usedItems.push({
+                            ...p,
+                            _usage: `Em uso por: ${usedPhones.get(clean)}`
+                        });
+                    }
+                });
+
+                if (usedItems.length > 0) {
+                    groups.push({ type: "Números já utilizados por membros (Segurança)", items: usedItems });
+                }
+            }
+        } catch (error) {
+            console.error("Erro ao analisar uso:", error);
+        }
+
+        setDuplicateAnalysis(groups);
+        setAnalyzing(false);
+    }
 
     useEffect(() => {
         loadPhones();
@@ -146,6 +218,14 @@ export default function AuthorizationsPage() {
                         {showImport ? <X className="h-4 w-4" /> : <FileUp className="h-4 w-4" />}
                         {showImport ? "Cancelar Importação" : "Importar Números"}
                     </Button>
+                    <Button
+                        variant="outline"
+                        className={cn("gap-2 font-bold transition-all", showDuplicates ? "bg-orange-500/10 border-orange-500/50 text-orange-600" : "")}
+                        onClick={() => setShowDuplicates(!showDuplicates)}
+                    >
+                        {showDuplicates ? <X className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
+                        {showDuplicates ? "Fechar Verificação" : "Verificar Uso"}
+                    </Button>
                 </div>
             </div>
 
@@ -213,6 +293,62 @@ export default function AuthorizationsPage() {
                                 </Button>
                             </div>
                         </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            {showDuplicates && (
+                <Card className="glass-card border-orange-200 dark:border-orange-900 bg-orange-50/50 dark:bg-orange-950/20 mb-6">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-400">
+                            <AlertTriangle className="h-5 w-5" />
+                            Análise de Duplicidade e Uso
+                        </CardTitle>
+                        <CardDescription>
+                            Verifique se há números duplicados ou se já estão sendo usados por membros cadastrados.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {analyzing ? (
+                            <p className="text-muted-foreground text-center py-4">Analisando base de dados...</p>
+                        ) : duplicateAnalysis.length === 0 ? (
+                            <div className="text-center py-4">
+                                <p className="text-green-600 font-medium flex items-center justify-center gap-2">
+                                    <ShieldCheck className="h-5 w-5" /> Tudo certo!
+                                </p>
+                                <p className="text-sm text-muted-foreground">Nenhuma duplicidade ou conflito encontrado.</p>
+                            </div>
+                        ) : (
+                            duplicateAnalysis.map((group, idx) => (
+                                <div key={idx} className="border border-border/60 rounded-xl p-4 bg-background/40">
+                                    <h4 className="font-bold text-sm text-foreground mb-3 flex items-center gap-2">
+                                        <AlertTriangle className="h-4 w-4 text-orange-500" />
+                                        {group.type}
+                                    </h4>
+                                    <div className="space-y-2">
+                                        {group.items.map(p => (
+                                            <div key={p.id} className="flex items-center justify-between p-3 rounded-lg bg-card border border-border/50 text-sm shadow-sm">
+                                                <div className="flex flex-col">
+                                                    <span className="font-bold text-lg">{formatPhone(p.celular)}</span>
+                                                    <span className="text-xs text-muted-foreground">Adicionado em: {new Date(p.created_at).toLocaleDateString()}</span>
+                                                    {p._usage && (
+                                                        <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 mt-1 flex items-center gap-1">
+                                                            <Users className="h-3 w-3" /> {p._usage}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <Button size="sm" variant="destructive" onClick={() => handleDelete(p.id)}>
+                                                        <Trash2 className="h-3 w-3 mr-1" /> Remover Autorização
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                        <Button variant="ghost" onClick={() => setShowDuplicates(false)} className="w-full">Fechar Análise</Button>
                     </CardContent>
                 </Card>
             )}
